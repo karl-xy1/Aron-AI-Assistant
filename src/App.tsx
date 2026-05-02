@@ -2,6 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bot, Cpu, Lightbulb, PhoneCall, Radio, Settings2, Wifi, Fan, Lock, Power, Video, BatteryFull, Move, ChevronLeft, ChevronRight, Apple, Play, X, Mail, Lock as LockIcon, User, Send, Battery, BatteryWarning } from 'lucide-react';
 
+const AronLogo = ({ className = "w-8 h-8", color = "currentColor" }: { className?: string, color?: string }) => (
+  <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M32 10L12 52 M32 10L52 52" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M10 40 C 22 40, 22 52, 32 46 C 42 40, 44 24, 52 16" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M40 16 L 52 16 L 52 28" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 const landingFeatures = [
   {
     title: "BẬT TẮT TỪ XA",
@@ -321,9 +329,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: (
         
         <div className="p-8">
           <div className="flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <div className="w-4 h-4 border-2 border-white rounded-full"></div>
-            </div>
+            <AronLogo className="w-10 h-10" color="#2563eb" />
             <span className="text-xl font-bold tracking-tight uppercase">Aron IoT</span>
           </div>
 
@@ -454,11 +460,9 @@ const ProductsPage = ({ setPage }: { setPage: (page: any) => void }) => {
     <div className="min-h-screen w-full bg-slate-50 text-slate-900 font-sans flex flex-col p-6 lg:p-12 relative overflow-hidden">
       <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[600px] h-[600px] bg-orange-100/40 rounded-full -z-10 blur-3xl pointer-events-none" />
       <div className="flex justify-between items-center mb-12 max-w-5xl mx-auto w-full relative z-20">
-        <div className="flex items-center gap-2 lg:gap-3 cursor-pointer" onClick={() => setPage('landing')}>
-          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-            <div className="w-4 h-4 lg:w-5 lg:h-5 border-[2.5px] border-white rounded-full"></div>
-          </div>
-          <span className="text-xl lg:text-2xl font-bold tracking-tight uppercase">Aron IoT</span>
+        <div className="flex items-center gap-2 lg:gap-3 cursor-pointer group" onClick={() => setPage('landing')}>
+          <AronLogo className="w-8 h-8 lg:w-10 lg:h-10 transition-transform group-hover:scale-110" color="#2563eb" />
+          <span className="text-xl lg:text-2xl font-bold tracking-tight uppercase group-hover:text-blue-600 transition-colors">Aron IoT</span>
         </div>
         <button onClick={() => setPage('landing')} className="text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-colors">Trang chủ</button>
       </div>
@@ -498,11 +502,9 @@ const FeaturesPage = ({ setPage }: { setPage: (page: any) => void }) => {
   return (
     <div className="min-h-screen w-full bg-slate-50 text-slate-900 font-sans flex flex-col p-6 lg:p-12 relative overflow-hidden">
       <div className="flex justify-between items-center mb-10 lg:mb-16 max-w-5xl mx-auto w-full relative z-20">
-        <div className="flex items-center gap-2 lg:gap-3 cursor-pointer" onClick={() => setPage('landing')}>
-          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-            <div className="w-4 h-4 lg:w-5 lg:h-5 border-[2.5px] border-white rounded-full"></div>
-          </div>
-          <span className="text-xl lg:text-2xl font-bold tracking-tight uppercase">Aron IoT</span>
+        <div className="flex items-center gap-2 lg:gap-3 cursor-pointer group" onClick={() => setPage('landing')}>
+          <AronLogo className="w-8 h-8 lg:w-10 lg:h-10 transition-transform group-hover:scale-110" color="#2563eb" />
+          <span className="text-xl lg:text-2xl font-bold tracking-tight uppercase group-hover:text-blue-600 transition-colors">Aron IoT</span>
         </div>
         <button onClick={() => setPage('landing')} className="text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-full hover:bg-blue-100 transition-colors">Trang chủ</button>
       </div>
@@ -602,11 +604,9 @@ export default function App() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-100/40 rounded-full -z-10 blur-3xl pointer-events-none" />
 
         <div className="flex justify-between items-center mb-8 lg:mb-12 max-w-5xl mx-auto w-full relative z-20">
-          <div className="flex items-center gap-2 lg:gap-3 cursor-pointer" onClick={() => setPage('landing')}>
-            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <div className="w-4 h-4 lg:w-5 lg:h-5 border-[2.5px] border-white rounded-full"></div>
-            </div>
-            <span className="text-xl lg:text-2xl font-bold tracking-tight uppercase">Aron IoT</span>
+          <div className="flex items-center gap-2 lg:gap-3 cursor-pointer group" onClick={() => setPage('landing')}>
+            <AronLogo className="w-8 h-8 lg:w-10 lg:h-10 transition-transform group-hover:scale-110" color="#2563eb" />
+            <span className="text-xl lg:text-2xl font-bold tracking-tight uppercase group-hover:text-blue-600 transition-colors">Aron IoT</span>
           </div>
           <button 
             onClick={() => setPage('landing')}
@@ -664,11 +664,9 @@ export default function App() {
     <div className="min-h-screen w-full overflow-x-hidden flex flex-col bg-slate-50 text-slate-900 font-sans relative">
       
       <div className="w-full px-4 sm:px-6 lg:px-12 py-4 sm:py-6 flex justify-between items-center z-20">
-        <div className="flex items-center gap-1.5 md:gap-2">
-          <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
-            <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white rounded-full"></div>
-          </div>
-          <span className="text-base md:text-xl font-bold tracking-tight uppercase truncate">Aron IoT</span>
+        <div className="flex items-center gap-1.5 md:gap-2 cursor-pointer group" onClick={() => setPage('landing')}>
+          <AronLogo className="w-8 h-8 md:w-10 md:h-10 shrink-0 transition-transform group-hover:scale-110" color="#2563eb" />
+          <span className="text-base md:text-xl font-bold tracking-tight uppercase truncate group-hover:text-blue-600 transition-colors">Aron IoT</span>
         </div>
         <div className="flex gap-3 md:gap-4 lg:gap-8 text-[11px] sm:text-xs md:text-sm font-medium text-slate-500 items-center shrink-0">
           <span onClick={() => setPage('products')} className="cursor-pointer hover:text-slate-800 transition-colors">Sản phẩm</span>
@@ -804,9 +802,7 @@ export default function App() {
         <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-12 relative z-10">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 border-2 border-white rounded-full"></div>
-              </div>
+              <AronLogo className="w-10 h-10" color="#3b82f6" />
               <span className="text-xl font-bold tracking-tight uppercase text-white">Aron IoT</span>
             </div>
             <p className="max-w-md text-sm leading-relaxed">
