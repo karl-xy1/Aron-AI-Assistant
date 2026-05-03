@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bot, Cpu, Lightbulb, PhoneCall, Radio, Settings2, Wifi, Fan, Lock, Power, Video, BatteryFull, Move, ChevronLeft, ChevronRight, Apple, Play, X, Mail, Lock as LockIcon, User, Send, Battery, BatteryWarning } from 'lucide-react';
+import { auth } from './lib/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged } from 'firebase/auth';
 
 const AronLogo = ({ className = "w-8 h-8", color = "currentColor" }: { className?: string, color?: string }) => (
   <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -310,10 +312,44 @@ const PhoneMockup = ({ time }: { time: string }) => {
   );
 };
 
-const AuthModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: () => void, onSuccess: () => void }) => {
+const AuthModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: () => void, onSuccess: (user: any) => void }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        onSuccess({ name: userCredential.user.displayName || email.split('@')[0], email: userCredential.user.email });
+      } else {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
+        onSuccess({ name, email: userCredential.user.email });
+      }
+    } catch (err: any) {
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Email này đã được sử dụng');
+      } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        setError('Email hoặc mật khẩu không chính xác');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Mật khẩu quá yếu (cần tối thiểu 6 ký tự)');
+      } else {
+        setError('Lỗi đăng nhập: ' + err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
@@ -334,9 +370,11 @@ const AuthModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: (
           </div>
 
           <h2 className="text-2xl font-bold mb-2">{isLogin ? 'Đăng nhập vào hệ thống' : 'Tạo tài khoản mới'}</h2>
-          <p className="text-sm text-slate-500 mb-8">{isLogin ? 'Chào mừng bạn quay trở lại với Aron' : 'Bắt đầu hành trình IoT của bạn cùng Aron'}</p>
+          <p className="text-sm text-slate-500 mb-6">{isLogin ? 'Chào mừng bạn quay trở lại với Aron' : 'Bắt đầu hành trình IoT của bạn cùng Aron'}</p>
 
-          <form onSubmit={(e) => { e.preventDefault(); onSuccess(); }} className="space-y-4">
+          {error && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">{error}</div>}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5 text-left">Họ và Tên</label>
@@ -344,7 +382,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: (
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <User className="w-5 h-5 text-slate-400" />
                   </div>
-                  <input type="text" className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="Nguyễn Văn A" required />
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="Nguyễn Văn A" required={!isLogin} />
                 </div>
               </div>
             )}
@@ -354,7 +392,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: (
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="w-5 h-5 text-slate-400" />
                 </div>
-                <input type="email" className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="email@example.com" required />
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="email@example.com" required />
               </div>
             </div>
             <div>
@@ -363,18 +401,18 @@ const AuthModal = ({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: (
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <LockIcon className="w-5 h-5 text-slate-400" />
                 </div>
-                <input type="password" className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="••••••••" required />
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="••••••••" required />
               </div>
             </div>
             
-            <button type="submit" className="w-full bg-slate-900 text-white rounded-xl py-4 font-bold text-sm shadow-md hover:bg-slate-800 transition-all mt-4 active:scale-[0.98]">
-              {isLogin ? 'Đăng nhập' : 'Đăng ký'}
+            <button type="submit" disabled={loading} className="w-full bg-slate-900 text-white rounded-xl py-4 font-bold text-sm shadow-md hover:bg-slate-800 transition-all mt-4 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed">
+              {loading ? 'Đang xử lý...' : (isLogin ? 'Đăng nhập' : 'Đăng ký')}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-500">
             {isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}
-            <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-semibold hover:underline">
+            <button onClick={() => { setIsLogin(!isLogin); setError(""); }} className="text-blue-600 font-semibold hover:underline">
               {isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}
             </button>
           </div>
@@ -572,6 +610,7 @@ export default function App() {
   const [time, setTime] = useState("");
   const [page, setPage] = useState<'landing' | 'demo' | 'products' | 'features'>('landing');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [user, setUser] = useState<{name: string, email: string} | null>(null);
   const desktopDrag = useDraggableScroll();
   const mobileDrag = useDraggableScroll();
 
@@ -583,16 +622,38 @@ export default function App() {
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const date = new Date();
-      setTime(`${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`);
-    }, 1000);
-    return () => clearInterval(interval);
+    // Check auth status
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({ name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '', email: firebaseUser.email || '' });
+      } else {
+        setUser(null);
+      }
+    });
+
+    const updateTime = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, []);
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = (userData: any) => {
+    setUser(userData);
     setIsAuthOpen(false);
-    setPage('demo');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      setPage('landing');
+    } catch {}
   };
 
   if (page === 'products') return <ProductsPage setPage={setPage} />;
@@ -609,7 +670,7 @@ export default function App() {
             <span className="text-xl lg:text-2xl font-bold tracking-tight uppercase group-hover:text-blue-600 transition-colors">Aron IoT</span>
           </div>
           <button 
-            onClick={() => setPage('landing')}
+            onClick={handleLogout}
             className="text-xs lg:text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
           >
             Đăng xuất
@@ -671,9 +732,18 @@ export default function App() {
         <div className="flex gap-3 md:gap-4 lg:gap-8 text-[11px] sm:text-xs md:text-sm font-medium text-slate-500 items-center shrink-0">
           <span onClick={() => setPage('products')} className="cursor-pointer hover:text-slate-800 transition-colors">Sản phẩm</span>
           <span onClick={() => setPage('features')} className="cursor-pointer hover:text-slate-800 transition-colors">Tính năng</span>
-          <button onClick={() => setIsAuthOpen(true)} className="text-blue-600 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 md:px-4 md:py-2 lg:px-5 lg:py-2.5 rounded-full transition-all">
-             Bắt đầu →
-          </button>
+          {user ? (
+            <div className="flex items-center gap-4">
+              <span className="hidden md:block text-slate-800 font-semibold">Chào, {user.name}</span>
+              <button onClick={() => setPage('demo')} className="text-blue-600 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 md:px-4 md:py-2 lg:px-5 lg:py-2.5 rounded-full transition-all">
+                 Vào Bảng Điều Khiển
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setIsAuthOpen(true)} className="text-blue-600 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 md:px-4 md:py-2 lg:px-5 lg:py-2.5 rounded-full transition-all">
+               Bắt đầu →
+            </button>
+          )}
         </div>
       </div>
 
@@ -706,9 +776,15 @@ export default function App() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 lg:gap-5 mt-2 lg:mt-4 w-full sm:w-auto">
-              <button onClick={() => setIsAuthOpen(true)} className="w-full sm:w-auto bg-slate-900 text-white px-8 py-4 lg:px-10 lg:py-5 rounded-2xl text-base lg:text-lg font-bold shadow-xl hover:bg-slate-800 transition-all hover:shadow-2xl active:scale-95 text-center">
-                Trải nghiệm ngay
-              </button>
+              {user ? (
+                <button onClick={() => setPage('demo')} className="w-full sm:w-auto bg-slate-900 text-white px-8 py-4 lg:px-10 lg:py-5 rounded-2xl text-base lg:text-lg font-bold shadow-xl hover:bg-slate-800 transition-all hover:shadow-2xl active:scale-95 text-center">
+                  Vào Bảng Điều Khiển
+                </button>
+              ) : (
+                <button onClick={() => setIsAuthOpen(true)} className="w-full sm:w-auto bg-slate-900 text-white px-8 py-4 lg:px-10 lg:py-5 rounded-2xl text-base lg:text-lg font-bold shadow-xl hover:bg-slate-800 transition-all hover:shadow-2xl active:scale-95 text-center">
+                  Đăng ký Trải nghiệm
+                </button>
+              )}
               <button className="w-full sm:w-auto border border-slate-200 bg-white px-8 py-4 lg:px-10 lg:py-5 rounded-2xl text-base lg:text-lg font-bold text-slate-800 hover:bg-slate-50 transition-all active:scale-95 text-center shadow-sm">
                 Xem hướng dẫn
               </button>
@@ -827,7 +903,7 @@ export default function App() {
           </div>
         </div>
         <div className="max-w-[1400px] mx-auto mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs relative z-10">
-          <p>© {new Date().getFullYear()} Aron IoT. Tự hào tạo ra tại Việt Nam.</p>
+          <p>© {new Date().getFullYear()} All In One. Tự hào tạo ra tại Việt Nam.</p>
           <div className="flex gap-6">
             <span className="cursor-pointer hover:text-white transition-colors">Điều khoản dịch vụ</span>
             <span className="cursor-pointer hover:text-white transition-colors">Chính sách bảo mật</span>
