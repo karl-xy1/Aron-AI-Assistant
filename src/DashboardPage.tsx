@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Mic, Phone, Plus, Power, ShieldAlert, CheckCircle2, XCircle, Home, Tv, Fan, ThermometerSnowflake, Lightbulb, UserRound, ArrowLeft, X } from 'lucide-react';
+import { Send, Mic, Phone, Plus, Power, ShieldAlert, CheckCircle2, XCircle, Home, Tv, Fan, ThermometerSnowflake, Lightbulb, UserRound, ArrowLeft, X, Trash2, Plug, Wind, Droplets } from 'lucide-react';
 
 interface Device {
   id: string;
   name: string;
-  type: 'light' | 'ac' | 'tv' | 'fan';
+  type: 'light' | 'ac' | 'tv' | 'fan' | 'appliance' | 'vacuum' | 'mop';
   isOn: boolean;
 }
 
@@ -33,7 +33,7 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
   
   const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false);
   const [newDeviceName, setNewDeviceName] = useState("");
-  const [newDeviceType, setNewDeviceType] = useState<'light' | 'ac' | 'tv' | 'fan'>('light');
+  const [newDeviceType, setNewDeviceType] = useState<Device['type']>('light');
 
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [newContactName, setNewContactName] = useState("");
@@ -121,11 +121,16 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
     if (lowerCommand.includes('bật')) {
       let matched = false;
       const updatedDevices = devices.map(d => {
-        if (lowerCommand.includes(d.name.toLowerCase()) || 
+        const isMatch = lowerCommand.includes(d.name.toLowerCase()) || 
             (lowerCommand.includes('đèn') && d.type === 'light') ||
             (lowerCommand.includes('điều hòa') && d.type === 'ac') ||
-            (lowerCommand.includes('tv') || lowerCommand.includes('tivi') && d.type === 'tv') ||
-            (lowerCommand.includes('quạt') && d.type === 'fan')) {
+            ((lowerCommand.includes('tv') || lowerCommand.includes('tivi')) && d.type === 'tv') ||
+            (lowerCommand.includes('quạt') && d.type === 'fan') ||
+            (lowerCommand.includes('gia dụng') && d.type === 'appliance') ||
+            (lowerCommand.includes('hút bụi') && d.type === 'vacuum') ||
+            (lowerCommand.includes('lau nhà') && d.type === 'mop');
+            
+        if (isMatch) {
           matched = true;
           return { ...d, isOn: true };
         }
@@ -145,11 +150,16 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
     if (lowerCommand.includes('tắt')) {
       let matched = false;
       const updatedDevices = devices.map(d => {
-        if (lowerCommand.includes(d.name.toLowerCase()) || 
+        const isMatch = lowerCommand.includes(d.name.toLowerCase()) || 
             (lowerCommand.includes('đèn') && d.type === 'light') ||
             (lowerCommand.includes('điều hòa') && d.type === 'ac') ||
-            (lowerCommand.includes('tv') || lowerCommand.includes('tivi') && d.type === 'tv') ||
-            (lowerCommand.includes('quạt') && d.type === 'fan')) {
+            ((lowerCommand.includes('tv') || lowerCommand.includes('tivi')) && d.type === 'tv') ||
+            (lowerCommand.includes('quạt') && d.type === 'fan') ||
+            (lowerCommand.includes('gia dụng') && d.type === 'appliance') ||
+            (lowerCommand.includes('hút bụi') && d.type === 'vacuum') ||
+            (lowerCommand.includes('lau nhà') && d.type === 'mop');
+            
+        if (isMatch) {
           matched = true;
           return { ...d, isOn: false };
         }
@@ -198,6 +208,16 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
     setIsAddContactOpen(false);
   };
 
+  const removeDevice = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDevices(devices.filter(d => d.id !== id));
+  };
+
+  const removeContact = (name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setContacts(contacts.filter(c => c !== name));
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
       {/* Header */}
@@ -236,12 +256,21 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
                 if (device.type === 'ac') Icon = ThermometerSnowflake;
                 if (device.type === 'tv') Icon = Tv;
                 if (device.type === 'fan') Icon = Fan;
+                if (device.type === 'appliance') Icon = Plug;
+                if (device.type === 'vacuum') Icon = Wind;
+                if (device.type === 'mop') Icon = Droplets;
                 
                 return (
                   <div key={device.id} 
-                    className={`p-4 rounded-2xl cursor-pointer transition-all ${device.isOn ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-slate-50 text-slate-700 border border-slate-100 hover:bg-slate-100'}`}
+                    className={`p-4 rounded-2xl cursor-pointer transition-all relative group ${device.isOn ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-slate-50 text-slate-700 border border-slate-100 hover:bg-slate-100'}`}
                     onClick={() => toggleDevice(device.id)}
                   >
+                    <button 
+                      className={`absolute top-2 right-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${device.isOn ? 'hover:bg-blue-700 text-blue-200' : 'hover:bg-slate-200 text-slate-400'}`}
+                      onClick={(e) => removeDevice(device.id, e)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                     <Icon className={`w-8 h-8 mb-3 ${device.isOn ? 'text-blue-200' : 'text-slate-400'}`} />
                     <div className="font-semibold text-sm leading-tight mb-1">{device.name}</div>
                     <div className={`text-xs font-medium ${device.isOn ? 'text-blue-100' : 'text-slate-400'}`}>
@@ -264,7 +293,15 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
              </div>
              <div className="flex flex-wrap gap-2">
                {contacts.map(c => (
-                 <span key={c} className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-semibold">{c}</span>
+                 <span key={c} className="bg-indigo-50 text-indigo-700 pl-3 pr-2 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1 group">
+                   {c}
+                   <button 
+                     onClick={(e) => removeContact(c, e)} 
+                     className="p-0.5 rounded-full hover:bg-indigo-200 text-indigo-400 hover:text-indigo-800 transition-colors opacity-0 group-hover:opacity-100"
+                   >
+                     <X className="w-3.5 h-3.5" />
+                   </button>
+                 </span>
                ))}
              </div>
           </div>
@@ -379,6 +416,9 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
                     <option value="ac">Điều hòa / Máy lạnh</option>
                     <option value="tv">Ti vi / Màn hình</option>
                     <option value="fan">Quạt</option>
+                    <option value="appliance">Đồ gia dụng (Máy giặt, Lò vi sóng...)</option>
+                    <option value="vacuum">Máy hút bụi</option>
+                    <option value="mop">Máy lau nhà</option>
                   </select>
                 </div>
                 <button type="submit" className="w-full bg-blue-600 text-white rounded-xl py-3 font-bold shadow-md hover:bg-blue-700 transition-all mt-6">
