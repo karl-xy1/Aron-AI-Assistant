@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Mic, Phone, Plus, Power, ShieldAlert, CheckCircle2, XCircle, Home, Tv, Fan, ThermometerSnowflake, Lightbulb, UserRound, ArrowLeft } from 'lucide-react';
+import { Send, Mic, Phone, Plus, Power, ShieldAlert, CheckCircle2, XCircle, Home, Tv, Fan, ThermometerSnowflake, Lightbulb, UserRound, ArrowLeft, X } from 'lucide-react';
 
 interface Device {
   id: string;
@@ -24,18 +24,67 @@ const initialDevices: Device[] = [
   { id: '4', name: 'Quạt trần', type: 'fan', isOn: false },
 ];
 
-const contacts = ['Mẹ', 'Bố', 'Vợ', 'Sếp', 'Công an'];
-
 export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: any) => void, user: any, handleLogout: () => void }) => {
   const [devices, setDevices] = useState<Device[]>(initialDevices);
+  const [contacts, setContacts] = useState<string[]>(['Mẹ', 'Bố', 'Vợ', 'Sếp', 'Công an']);
   const [inputText, setInputText] = useState("");
   const [logs, setLogs] = useState<ActionLog[]>([]);
   const [isListening, setIsListening] = useState(false);
+  
+  const [isAddDeviceOpen, setIsAddDeviceOpen] = useState(false);
+  const [newDeviceName, setNewDeviceName] = useState("");
+  const [newDeviceType, setNewDeviceType] = useState<'light' | 'ac' | 'tv' | 'fan'>('light');
+
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [newContactName, setNewContactName] = useState("");
+
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.lang = 'vi-VN';
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.maxAlternatives = 1;
+
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognitionRef.current.onresult = (event: any) => {
+        const speechResult = event.results[0][0].transcript;
+        setInputText(speechResult);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error("Speech recognition error", event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
+
+  const toggleListen = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      if (recognitionRef.current) {
+        recognitionRef.current.start();
+      } else {
+        alert("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Vui lòng sử dụng Chrome.");
+      }
+    }
+  };
 
   const addLog = (command: string, response: string, status: 'success' | 'error' | 'pending') => {
     const newLog: ActionLog = {
@@ -117,7 +166,7 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
     }
 
     // Fallback
-    addLog(command, 'Tôi chưa hiểu yêu cầu này, vui lòng thử điều 명령 khác (bật đèn, gọi trợ giúp, khẩn cấp...).', 'error');
+    addLog(command, 'Tôi chưa hiểu yêu cầu này, vui lòng thử lệnh khác (bật đèn, gọi trợ giúp, khẩn cấp...).', 'error');
   };
 
   const handleSend = (e: React.FormEvent) => {
@@ -129,6 +178,24 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
 
   const toggleDevice = (id: string) => {
     setDevices(devices.map(d => d.id === id ? { ...d, isOn: !d.isOn } : d));
+  };
+
+  const handleAddDevice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDeviceName.trim()) return;
+    setDevices([...devices, { id: Date.now().toString(), name: newDeviceName, type: newDeviceType, isOn: false }]);
+    setNewDeviceName("");
+    setIsAddDeviceOpen(false);
+  };
+
+  const handleAddContact = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newContactName.trim()) return;
+    if (!contacts.includes(newContactName)) {
+      setContacts([...contacts, newContactName]);
+    }
+    setNewContactName("");
+    setIsAddContactOpen(false);
   };
 
   return (
@@ -158,7 +225,7 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Home className="w-5 h-5 text-blue-500" /> Thiết bị của bạn
               </h2>
-              <button className="bg-slate-100 text-slate-600 p-2 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors">
+              <button onClick={() => setIsAddDeviceOpen(true)} className="bg-slate-100 text-slate-600 p-2 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors">
                 <Plus className="w-4 h-4" />
               </button>
             </div>
@@ -187,9 +254,14 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
           </div>
 
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
-                <UserRound className="w-5 h-5 text-indigo-500" /> Danh bạ Bot
-             </h2>
+             <div className="flex items-center justify-between mb-4">
+               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <UserRound className="w-5 h-5 text-indigo-500" /> Danh bạ Bot
+               </h2>
+               <button onClick={() => setIsAddContactOpen(true)} className="bg-slate-100 text-slate-600 p-2 rounded-full hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                 <Plus className="w-4 h-4" />
+               </button>
+             </div>
              <div className="flex flex-wrap gap-2">
                {contacts.map(c => (
                  <span key={c} className="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-semibold">{c}</span>
@@ -221,7 +293,7 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
             {logs.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
                 <Mic className="w-12 h-12 text-slate-300 mb-4" />
-                <p className="text-slate-500 max-w-sm">Hãy thử nhập "bật đèn phòng khách", "gọi cho Mẹ" hoặc "khẩn cấp gọi xe cứu thương".</p>
+                <p className="text-slate-500 max-w-sm">Hãy thử nhập "bật đèn phòng khách", "gọi cho Mẹ" hoặc "khẩn cấp gọi xe cứu thương". Hoặc nhấn biểu tượng micro để nói chữ.</p>
               </div>
             ) : (
               logs.map(log => (
@@ -256,7 +328,7 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
             <form onSubmit={handleSend} className="relative flex items-center">
               <button 
                 type="button" 
-                onClick={() => setIsListening(!isListening)}
+                onClick={toggleListen}
                 className={`absolute left-3 w-10 h-10 flex items-center justify-center rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-500 animate-pulse' : 'text-slate-400 hover:bg-slate-100'}`}
               >
                 <Mic className="w-5 h-5" />
@@ -265,7 +337,7 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
                 type="text" 
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder={isListening ? "Đang nghe... (giả lập)" : "Nhập lệnh (vd: khẩn cấp, bật tivi...)"}
+                placeholder={isListening ? "Đang nghe..." : "Nhập lệnh (vd: khẩn cấp, bật tivi...)"}
                 className="w-full pl-14 pr-14 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-inner"
               />
               <button 
@@ -280,6 +352,73 @@ export const DashboardPage = ({ setPage, user, handleLogout }: { setPage: (p: an
         </div>
 
       </main>
+
+      {/* Add Device Modal */}
+      <AnimatePresence>
+        {isAddDeviceOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative"
+            >
+              <button onClick={() => setIsAddDeviceOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+              <h2 className="text-2xl font-bold mb-6">Thêm thiết bị mới</h2>
+              <form onSubmit={handleAddDevice} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">Tên thiết bị</label>
+                  <input type="text" value={newDeviceName} onChange={e => setNewDeviceName(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="vd: Máy giặt" required />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">Loại thiết bị</label>
+                  <select value={newDeviceType} onChange={e => setNewDeviceType(e.target.value as any)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer appearance-none">
+                    <option value="light">Đèn chiếu sáng</option>
+                    <option value="ac">Điều hòa / Máy lạnh</option>
+                    <option value="tv">Ti vi / Màn hình</option>
+                    <option value="fan">Quạt</option>
+                  </select>
+                </div>
+                <button type="submit" className="w-full bg-blue-600 text-white rounded-xl py-3 font-bold shadow-md hover:bg-blue-700 transition-all mt-6">
+                  Thêm thiết bị
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Contact Modal */}
+      <AnimatePresence>
+        {isAddContactOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative"
+            >
+              <button onClick={() => setIsAddContactOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+              <h2 className="text-2xl font-bold mb-6">Thêm liên hệ</h2>
+              <form onSubmit={handleAddContact} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">Tên gợi nhớ</label>
+                  <input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="vd: Bác sĩ, Bạn thân" required />
+                </div>
+                <button type="submit" className="w-full bg-indigo-600 text-white rounded-xl py-3 font-bold shadow-md hover:bg-indigo-700 transition-all mt-6">
+                  Thêm vào danh bạ
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };
+
