@@ -4,6 +4,8 @@ import { Bot, Cpu, Lightbulb, PhoneCall, Radio, Settings2, Wifi, Fan, Lock, Powe
 import { auth } from './lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged } from 'firebase/auth';
 
+import { DashboardPage } from './DashboardPage';
+
 const AronLogo = ({ className = "w-8 h-8", color = "currentColor" }: { className?: string, color?: string }) => (
   <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M32 10L12 52 M32 10L52 52" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -608,7 +610,7 @@ const FeaturesPage = ({ setPage }: { setPage: (page: any) => void }) => {
 
 export default function App() {
   const [time, setTime] = useState("");
-  const [page, setPage] = useState<'landing' | 'demo' | 'products' | 'features'>('landing');
+  const [page, setPage] = useState<'landing' | 'demo' | 'products' | 'features' | 'dashboard'>('landing');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState<{name: string, email: string} | null>(null);
   const desktopDrag = useDraggableScroll();
@@ -659,6 +661,8 @@ export default function App() {
   if (page === 'products') return <ProductsPage setPage={setPage} />;
   if (page === 'features') return <FeaturesPage setPage={setPage} />;
 
+  if (page === 'dashboard') return <DashboardPage setPage={setPage} user={user} handleLogout={handleLogout} />;
+  
   if (page === 'demo') {
     return (
       <div className="min-h-screen w-full bg-slate-50 text-slate-900 font-sans flex flex-col p-6 lg:p-12 relative overflow-hidden">
@@ -735,7 +739,7 @@ export default function App() {
           {user ? (
             <div className="flex items-center gap-4">
               <span className="hidden md:block text-slate-800 font-semibold">Chào, {user.name}</span>
-              <button onClick={() => setPage('demo')} className="text-blue-600 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 md:px-4 md:py-2 lg:px-5 lg:py-2.5 rounded-full transition-all">
+              <button onClick={() => setPage('dashboard')} className="text-blue-600 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 md:px-4 md:py-2 lg:px-5 lg:py-2.5 rounded-full transition-all">
                  Vào Bảng Điều Khiển
               </button>
             </div>
@@ -777,7 +781,7 @@ export default function App() {
 
             <div className="flex flex-col sm:flex-row gap-4 lg:gap-5 mt-2 lg:mt-4 w-full sm:w-auto">
               {user ? (
-                <button onClick={() => setPage('demo')} className="w-full sm:w-auto bg-slate-900 text-white px-8 py-4 lg:px-10 lg:py-5 rounded-2xl text-base lg:text-lg font-bold shadow-xl hover:bg-slate-800 transition-all hover:shadow-2xl active:scale-95 text-center">
+                <button onClick={() => setPage('dashboard')} className="w-full sm:w-auto bg-slate-900 text-white px-8 py-4 lg:px-10 lg:py-5 rounded-2xl text-base lg:text-lg font-bold shadow-xl hover:bg-slate-800 transition-all hover:shadow-2xl active:scale-95 text-center">
                   Vào Bảng Điều Khiển
                 </button>
               ) : (
