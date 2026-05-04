@@ -1,6 +1,6 @@
 {
   "name": "Aron AI AST",
   "description": "Một landing page giới thiệu về app quản lý IoT tích hợp robot trợ lý AI cá nhân Aron, dự án dành cho học sinh THPT.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": []
 }
